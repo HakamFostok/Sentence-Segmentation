@@ -8,16 +8,55 @@ chrome.runtime.onInstalled.addListener(function () {
 });
 
 function onClickHandler(info, tab) {
-    if (info.menuItemId === "segmentSection") {
-        chrome.tabs.executeScript(tab.id, {
-            code: "segmentSection('section');"
-        });
-    } else {
-        chrome.tabs.executeScript(tab.id, {
-            code: "segmentSection('body');"
-        });
+    const segment = info.menuItemId === "segmentSection" ? "section" : "body";
+
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: segmentSectionWrapper,
+        args: [segment]
+    });
+}
+
+function segmentSectionWrapper(target) {
+    if (typeof segmentSection === "function") {
+        segmentSection(target);
     }
-};
+}
+
+chrome.runtime.onInstalled.addListener(function () {
+    console.log("Installed");
+    chrome.storage.local.set({ 'switch': "On" });
+    chrome.storage.local.set({ 'autoSegmentSwitch': "Off" });
+    chrome.storage.local.set({ 'paraBorder': "Off" });
+    chrome.storage.local.set({ 'lineSeparator': "Off" });
+    chrome.storage.local.set({ 'doubleSpace': "Off" });
+});
+
+chrome.contextMenus.onClicked.addListener(onClickHandler);
+
+chrome.runtime.onMessage.addListener(
+    function (request, sender, sendResponse) {
+        const reloadTab = () => {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
+            });
+        };
+
+        if (request.method === "turnOff") {
+            chrome.storage.local.set({ 'switch': request.value ? "Off" : "On" });
+            sendResponse({ message: `Extension turned ${request.value ? "Off" : "On"}` });
+            reloadTab();
+        }
+        // Add other cases as needed
+        return true;
+    }
+);
+
+function segmentSectionWrapper(target) {
+    if (typeof segmentSection === "function") {
+        segmentSection(target);
+    }
+}
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
@@ -31,14 +70,7 @@ const getStatus = function () {
     chrome.storage.local.get(null, function (resp) {
         console.log(resp.switch);
         mainSwitch = resp.switch;
-        //if (mainSwitch === "On"){
         chrome.contextMenus.create({ "title": "Segment Complete Page", "id": "segmentPage" });
-        //chrome.contextMenus.create({"title": "Segment This Section", "id": "segmentSection"});
-        //}
-        //else {
-        //    chrome.contextMenus.removeAll();
-        //}
-        //
     });
 }
 
@@ -80,99 +112,41 @@ setTimeout(function () {
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
+        const reloadTab = () => {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
+            });
+        };
+
         if (request.method === "turnOff") {
-            if (request.value) {
-                //turn off the extension.. set flag to off
-                chrome.storage.local.set({ 'switch': "Off" });
-                sendResponse({ message: "Extension turned Off" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getStatus();
-            }
-            else {
-                //turn on the extension
-                chrome.storage.local.set({ 'switch': "On" });
-                sendResponse({ message: "Extension turned On" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getStatus();
-            }
+            chrome.storage.local.set({ 'switch': request.value ? "Off" : "On" });
+            sendResponse({ message: `Extension turned ${request.value ? "Off" : "On"}` });
+            reloadTab();
+            getStatus();
         }
-        if (request.method === "autoSegment") {
-            if (request.value) {
-                //turn on auto Segmentation
-                chrome.storage.local.set({ 'autoSegmentSwitch': "On" });
-                sendResponse({ message: "Auto Segment turned On" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getAutoSegment();
-            }
-            else {
-                //turn off auto Segmentation
-                chrome.storage.local.set({ 'autoSegmentSwitch': "Off" });
-                sendResponse({ message: "Auto Segment turned Off" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getAutoSegment();
-            }
+        else if (request.method === "autoSegment") {
+            chrome.storage.local.set({ 'autoSegmentSwitch': request.value ? "On" : "Off" });
+            sendResponse({ message: `Auto Segment turned ${request.value ? "On" : "Off"}` });
+            reloadTab();
+            getAutoSegment();
         }
-        if (request.method === "paraBorder") {
-            if (request.value) {
-                chrome.storage.local.set({ 'paraBorder': "On" });
-                sendResponse({ message: "paraBorder turned Off" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getParaBorder();
-            }
-            else {
-                chrome.storage.local.set({ 'paraBorder': "Off" });
-                sendResponse({ message: "paraBorder turned On" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getParaBorder();
-            }
+        else if (request.method === "paraBorder") {
+            chrome.storage.local.set({ 'paraBorder': request.value ? "On" : "Off" });
+            sendResponse({ message: `paraBorder turned ${request.value ? "On" : "Off"}` });
+            reloadTab();
+            getParaBorder();
         }
-        if (request.method === "doubleSpace") {
-            if (request.value) {
-                chrome.storage.local.set({ 'doubleSpace': "On" });
-                sendResponse({ message: "doubleSpace turned On" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getDoubleSpace();
-            }
-            else {
-                chrome.storage.local.set({ 'doubleSpace': "Off" });
-                sendResponse({ message: "doubleSpace turned Off" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getDoubleSpace();
-            }
+        else if (request.method === "doubleSpace") {
+            chrome.storage.local.set({ 'doubleSpace': request.value ? "On" : "Off" });
+            sendResponse({ message: `doubleSpace turned ${request.value ? "On" : "Off"}` });
+            reloadTab();
+            getDoubleSpace();
         }
-        if (request.method === "lineSeparator") {
-            if (request.value) {
-                chrome.storage.local.set({ 'lineSeparator': "On" });
-                sendResponse({ message: "LineSeparator turned Off" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getLineSeparator();
-            }
-            else {
-                chrome.storage.local.set({ 'lineSeparator': "Off" });
-                sendResponse({ message: "LineSeparator turned On" });
-                chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                    chrome.tabs.update(tabs[0].id, { url: tabs[0].url });
-                });
-                getLineSeparator();
-            }
+        else if (request.method === "lineSeparator") {
+            chrome.storage.local.set({ 'lineSeparator': request.value ? "On" : "Off" });
+            sendResponse({ message: `LineSeparator turned ${request.value ? "On" : "Off"}` });
+            reloadTab();
+            getLineSeparator();
         }
         else if (request.method === "getStatus") {
             sendResponse({ message: mainSwitch });
@@ -190,14 +164,23 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ message: autoSegmentSwitch });
         }
         else if (request.method === "segmentThisPage") {
-            chrome.tabs.executeScript(null, {
-                code: "segmentSection('body');"
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tabs[0].id },
+                    func: segmentSectionWrapper,
+                    args: ['body']
+                });
             });
         }
-    });
 
-chrome.browserAction.onClicked.addListener(function (tab) {
-    chrome.tabs.executeScript(null, {
-        code: "segmentSection('body');"
+        return true;
+    }
+);
+
+chrome.action.onClicked.addListener(function (tab) {
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: segmentSectionWrapper,
+        args: ['body']
     });
 });

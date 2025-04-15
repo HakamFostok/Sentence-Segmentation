@@ -1,8 +1,8 @@
 {
   "name": "Sentence Segmenter",
   "short_name": "Sentence Segmenter",
-  "version": "1.6.4",
-  "manifest_version": 2,
+  "version": "2.0.0",
+  "manifest_version": 3,
   "description": "This extension will make your text easily readable by separating sentences based on periods.",
   "icons": {
     "128": "images/icon-128.png"
@@ -13,15 +13,16 @@
   },
   "default_locale": "en",
   "permissions": [
-    "http://*/*",
-    "https://*/*",
+    "scripting",
     "contextMenus",
     "storage"
   ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "background": {
-    "scripts": [
-      "scripts/background.js"
-    ]
+    "service_worker": "scripts/background.js"
   },
   "content_scripts": [
     {
@@ -33,14 +34,14 @@
         "scripts/script.js",
         "scripts/contentscript.js"
       ],
-      "css":[
+      "css": [
         "styles/main.css"
       ],
       "run_at": "document_end",
       "all_frames": false
     }
   ],
-  "browser_action": {
+  "action": {
     "default_title": "Sentence Segmentation"
   }
 }
