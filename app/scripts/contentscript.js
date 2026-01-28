@@ -84,6 +84,7 @@ var segmentSection = function (which) {
     else elem = "body";
     $(elem + " *").each(function () {
         let v = $(this).html();
+        // the following regex will execlude common abbreviations like i.e., e.g., etc., vs. from being considered as sentence boundaries
         const regexForPeriod = /(?<!i\.e)(?<!e\.g)(?<!etc)(?<!vs)\.\s/g;       //regex to find period
         const regexForQuestion = /\?\s/g;     //regex to find question mark
         const regexForExclamation = /\!\s/g; //regex to find exclamation mark
