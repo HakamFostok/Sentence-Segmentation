@@ -52,12 +52,6 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
-function segmentSectionWrapper(target) {
-    if (typeof segmentSection === "function") {
-        segmentSection(target);
-    }
-}
-
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
 var mainSwitch = "";

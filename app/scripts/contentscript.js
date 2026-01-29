@@ -79,28 +79,29 @@ $(document).ready(function () {
 
 });
 
+// the following regex will execlude common abbreviations like i.e., e.g., etc., vs. from being considered as sentence boundaries
+const regexForPeriod = /(?<!i\.e)(?<!e\.g)(?<!etc)(?<!vs)(?<!^\d)\.\s/gm;       //regex to find period
+const regexForQuestion = /\?\s/g;     //regex to find question mark
+const regexForExclamation = /\!\s/g; //regex to find exclamation mark
+const regexForDotBeforeClosingParanthesis = /\.\) /g; //regex to find period before closing paran tag
+
+const lineBreak = ".<br/>";
+const questionBreak = "?<br/>";
+const exclamationBreak = "!<br/>";
+const dotBeforeClosingParanthesisBreak = ".)<br/>";
+
 var segmentSection = function (which) {
     if (which == "section") elem = "#pickMe";
-    else elem = "body";
-    $(elem + " *").each(function () {
+    else elem = "p";
+    $(elem).each(function () {
         let v = $(this).html();
-        // the following regex will execlude common abbreviations like i.e., e.g., etc., vs. from being considered as sentence boundaries
-        const regexForPeriod = /(?<!i\.e)(?<!e\.g)(?<!etc)(?<!vs)\.\s/g;       //regex to find period
-        const regexForQuestion = /\?\s/g;     //regex to find question mark
-        const regexForExclamation = /\!\s/g; //regex to find exclamation mark
-        const regexForDotBeforeClosingParanthesis = /\.\) /g; //regex to find period before closing paran tag
+        if (v === "")
+            return; //skip if no text content
 
-        const lineBreak = doubleSpace ? ".&nbsp;&nbsp;" : ".<br/>";
-        const questionBreak = "?<br/>";
-        const exclamationBreak = "!<br/>";
-        const dotBeforeClosingParanthesisBreak = ".)<br/>";
-        const separatorElem = "";// doubleSpace ? "" : "<span class='segmentSeparator'></span>";
-        //if (lineSeparator) separatorElem = "<span class='segmentSeparator sepBorder'></span>";
-
-        v = v.replace(regexForPeriod, (lineBreak + separatorElem));             //replacing period with period and newline
-        v = v.replace(regexForQuestion, (questionBreak + separatorElem));       //replacing questionmark with questionmark and newline
-        v = v.replace(regexForExclamation, (exclamationBreak + separatorElem));    //replacing exclamation mark with exclamation mark and newline
-        v = v.replace(regexForDotBeforeClosingParanthesis, (dotBeforeClosingParanthesisBreak + separatorElem)); //replacing period before closing paran tag with period and newline
+        v = v.replace(regexForPeriod, lineBreak);               //replacing period with period and newline
+        v = v.replace(regexForQuestion, questionBreak);         //replacing questionmark with questionmark and newline
+        v = v.replace(regexForExclamation, exclamationBreak);   //replacing exclamation mark with exclamation mark and newline
+        v = v.replace(regexForDotBeforeClosingParanthesis, dotBeforeClosingParanthesisBreak); //replacing period before closing paran tag with period and newline
         $(this).html(v);        //adding replaced content back to the DOM element
     });
     $("#pickMe").attr("id", "");
